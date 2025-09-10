@@ -1,59 +1,47 @@
 package gourier
 
 import (
+	"encoding/binary"
 	"errors"
 	"io"
 	"net"
-	"sync"
-	"time"
 )
 
-type connectionManager struct {
-	connections map[[4]byte]net.Conn
-	mu          sync.Mutex
+// TCP payload structure -> first 4 bytes is length of payload in bytes, next bytes is the route byte to byte, and las is the real payload
 
+type connectionManager struct {
 	deadlineTime uint
 
 	maxBytes uint
 
-	maxGoroutines uint
-	grCount       uint
-	grBlocker     chan<- struct{}
+	grBlocker chan struct{}
 
 	radix *radixNode
 }
 
-func (cm *connectionManager) GetConn(ip [4]byte) net.Conn {
-	cm.mu.Lock()
-	conn, ok := cm.connections[ip]
-	cm.mu.Unlock()
-	if !ok {
-		return nil
+func newConnectionManager(deadlineTime uint, maxReadBytes uint, maxGoroutines uint, radix *radixNode) *connectionManager {
+	return &connectionManager{
+		deadlineTime: deadlineTime,
+		maxBytes:     maxReadBytes,
+		grBlocker:    make(chan struct{}, maxGoroutines),
+		radix:        radix,
 	}
-
-	return conn
 }
 
-func (cm *connectionManager) SaveConn(ip [4]byte, conn net.Conn) {
-	cm.mu.Lock()
-	cm.connections[ip] = conn
-	cm.mu.Unlock()
-	conn.SetDeadline(time.Now().Add(time.Second * time.Duration(cm.deadlineTime)))
-
-	cm.grCount++ // TODO: fer que el count sigui amb sync
-	// Ficar aquí el chan del blocker
+func (cm *connectionManager) ManageConn(conn net.Conn) {
+	cm.grBlocker <- struct{}{}
 	go func() {
 		defer func() {
-			cm.grCount--
-			// cm.CloseConn(conn.LocalAddr().Network())
-			// TODO: blocker chan lliberar
+			conn.Close()
+			<-cm.grBlocker
 		}()
 
 		for {
 			buff := make([]byte, cm.maxBytes)
-			lr := io.LimitReader(conn, int64(cm.maxBytes))
 
-			_, err := lr.Read(buff)
+			// conn.SetDeadline(time.Now().Add(time.Second * time.Duration(cm.deadlineTime)))
+
+			err := cm.readAll(conn, buff)
 			if err != nil {
 				return
 			}
@@ -63,20 +51,47 @@ func (cm *connectionManager) SaveConn(ip [4]byte, conn net.Conn) {
 				return
 			}
 
-			hr := &handlerRunner{&Context{conn, cm.connections, buff, rn.depth}}
-			hr.RunHandlers(rn.GetHandlers()...)
+			hr := &handlerRunner{&Context{conn, buff, rn.depth, false}}
+
+			err = hr.RunHandlers(rn.GetHandlers()...)
+			if err != nil {
+				return
+			}
 		}
 	}()
 }
 
-func (cm *connectionManager) CloseConn(ip [4]byte) error {
-	cm.mu.Lock()
-	conn, ok := cm.connections[ip]
-	if !ok {
-		return errors.New("no existing connection")
+func (cm *connectionManager) writeAll(conn net.Conn, data []byte) error {
+	total := 0
+
+	for total < len(data) {
+		n, err := conn.Write(data[total:])
+		if err != nil {
+			return err
+		}
+		total += n
 	}
-	delete(cm.connections, ip)
-	cm.mu.Unlock()
-	conn.Close()
+
+	return nil
+}
+
+func (cm *connectionManager) readAll(conn net.Conn, dst []byte) error {
+	encodedLength := [4]byte{}
+
+	_, err := io.ReadFull(conn, encodedLength[:])
+	if err != nil {
+		return err
+	}
+
+	payloadLength := binary.BigEndian.Uint32(encodedLength[:])
+	if payloadLength > uint32(cm.maxBytes) {
+		return errors.New("payload too large")
+	}
+
+	_, err = io.ReadFull(conn, dst[:payloadLength])
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

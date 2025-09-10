@@ -2,8 +2,11 @@ package gourier
 
 type radixNode struct {
 	children map[byte]*radixNode
-	handlers []HandleFunc
-	depth    uint
+
+	handlers     []HandleFunc
+	errorHandler HandleFunc // TODO:
+
+	depth uint
 }
 
 func (r *radixNode) FindPath(b ...byte) *radixNode {
@@ -14,8 +17,11 @@ func (r *radixNode) FindPath(b ...byte) *radixNode {
 
 	node := r
 	for _, elem := range b {
+		if node.children == nil {
+			return node
+		}
+
 		child, ok := node.children[elem]
-		// TODO: aquí mirar si pot tenir mes children o ha arribat al final perque deixi de llegir bytes del payload
 		if !ok {
 			return nil
 		}
