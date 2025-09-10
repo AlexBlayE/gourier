@@ -17,14 +17,14 @@ type Context struct {
 }
 
 func (c *Context) Abort(errorResponse []byte) {
-	// TODO: fer que pugui enviar la resposta d'error
+	c.Send(errorResponse)
 	c.abortFlag = true
 }
 
 func (c *Context) Send(payload []byte, headers ...byte) error {
-	toSend := []byte{}
-
 	fullLength := len(payload) + len(headers)
+
+	toSend := make([]byte, 4)
 
 	binary.BigEndian.PutUint32(toSend, uint32(fullLength))
 

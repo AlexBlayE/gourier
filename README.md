@@ -1,5 +1,3 @@
-# A
+# Gourier
 
-* Post hackernews
-* Post reddit
-* pujer-ho en awesome-go en github
+[4 bytes payload length][payload [headers] [content]]

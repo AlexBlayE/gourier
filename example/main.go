@@ -37,10 +37,13 @@ func main() {
 	g.Handler(byte(V1),
 		func(ctx *gourier.Context) {
 			fmt.Println("EUREKA")
+			// ctx.Abort([]byte{})
 		},
 		func(ctx *gourier.Context) {
 			fmt.Println("HOUSTON")
-			fmt.Println(ctx.GetPayload())
+			// fmt.Println(ctx.GetPayload())
+			err := ctx.Send([]byte{1, 2, 3, 4, 5, 6, 7}, 3, 2)
+			fmt.Println("Error -> ", err)
 		},
 	)
 

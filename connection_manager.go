@@ -5,9 +5,8 @@ import (
 	"errors"
 	"io"
 	"net"
+	"time"
 )
-
-// TCP payload structure -> first 4 bytes is length of payload in bytes, next bytes is the route byte to byte, and las is the real payload
 
 type connectionManager struct {
 	deadlineTime uint
@@ -39,7 +38,7 @@ func (cm *connectionManager) ManageConn(conn net.Conn) {
 		for {
 			buff := make([]byte, cm.maxBytes)
 
-			// conn.SetDeadline(time.Now().Add(time.Second * time.Duration(cm.deadlineTime)))
+			conn.SetDeadline(time.Now().Add(time.Second * time.Duration(cm.deadlineTime)))
 
 			err := cm.readAll(conn, buff)
 			if err != nil {
