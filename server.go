@@ -7,23 +7,23 @@ import (
 	"sync"
 )
 
-type server struct {
+type Server struct {
 	connManager *connectionManager
 	logger      *logger
 	radixRouter *radixNode
 }
 
-func New() *server {
+func New() *Server {
 	radix := &radixNode{make(map[byte]*radixNode), nil, nil, 0}
 
-	return &server{
+	return &Server{
 		connManager: newConnectionManager(60, 1024, 50, radix),
 		logger:      &logger{nil, os.Stdout, sync.Mutex{}, "Info"},
 		radixRouter: radix,
 	}
 }
 
-func (s *server) Run(port string) error {
+func (s *Server) Run(port string) error {
 	l, err := net.Listen("tcp", port)
 	if err != nil {
 		return err
@@ -39,7 +39,7 @@ func (s *server) Run(port string) error {
 	}
 }
 
-func (s *server) RunTLS(port string, tlsConfig *tls.Config) error {
+func (s *Server) RunTLS(port string, tlsConfig *tls.Config) error {
 	l, err := tls.Listen("tcp", port, tlsConfig)
 	if err != nil {
 		return err
@@ -55,38 +55,53 @@ func (s *server) RunTLS(port string, tlsConfig *tls.Config) error {
 	}
 }
 
-func (s *server) Handler(header byte, handleFunc ...HandleFunc) {
+func (s *Server) Handler(header byte, handleFunc ...HandleFunc) {
 	s.radixRouter.children[header] = &radixNode{nil, handleFunc, nil, 1}
 }
 
-func (s *server) Group(header byte) *routerGroup {
+func (s *Server) Error(errorHandler HandleFunc) {
+	s.radixRouter.errorHandler = errorHandler
+}
+
+func (s *Server) Group(header byte) *routerGroup {
 	newChildNode := &radixNode{make(map[byte]*radixNode), nil, nil, 1}
 	s.radixRouter.children[header] = newChildNode
 	return &routerGroup{newChildNode}
 }
 
-func (s *server) SetOptions() error {
+func (s *Server) SetOptions() error {
 	// TODO: opcions del connManager com MaxGoroutines, MaxBytes etc
 	return nil
 }
 
-func (s *server) HandleOpenConn(conn net.Conn) {
+func (s *Server) Send(ip string, payload []byte) error {
+	conn, err := net.Dial("tcp", ip)
+	if err != nil {
+		return err
+	}
+
+	err = s.connManager.writeAll(conn, payload)
+	if err != nil {
+		return err
+	}
+
 	s.connManager.ManageConn(conn)
+
+	return nil
 }
 
-func (s *server) Send(ip string) {
-
-}
-
-func (s *server) SendTLS(ip string, payload []byte, config *tls.Config) error {
+func (s *Server) SendTLS(ip string, payload []byte, config *tls.Config) error {
 	conn, err := tls.Dial("tcp", ip, config)
 	if err != nil {
 		return err
 	}
 
-	// conn.Write()// TODO: fer que s'envii tot el payload mirant n(crear una funció que ho fagi automaticament)
-	// TODO: Com que tcp es orientet al fluxe tinc que fer un mecanisme perque send y write sempre ho llegeixin tot y despres ya continui la execució
+	err = s.connManager.writeAll(conn, payload)
+	if err != nil {
+		return err
+	}
 
-	s.HandleOpenConn(conn)
+	s.connManager.ManageConn(conn)
+
 	return nil
 }

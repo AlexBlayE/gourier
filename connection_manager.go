@@ -36,21 +36,19 @@ func (cm *connectionManager) ManageConn(conn net.Conn) {
 		}()
 
 		for {
-			buff := make([]byte, cm.maxBytes)
-
 			conn.SetDeadline(time.Now().Add(time.Second * time.Duration(cm.deadlineTime)))
 
-			err := cm.readAll(conn, buff)
+			b, err := cm.readAll(conn)
 			if err != nil {
 				return
 			}
 
-			rn := cm.radix.FindPath(buff...)
+			rn := cm.radix.FindPath(b...)
 			if rn == nil {
 				return
 			}
 
-			hr := &handlerRunner{&Context{conn, buff, rn.depth, false}}
+			hr := &handlerRunner{&Context{conn, b, rn.depth, false, make(map[string]any)}}
 
 			err = hr.RunHandlers(rn.GetHandlers()...)
 			if err != nil {
@@ -61,9 +59,22 @@ func (cm *connectionManager) ManageConn(conn net.Conn) {
 }
 
 func (cm *connectionManager) writeAll(conn net.Conn, data []byte) error {
-	total := 0
+	size := len(data)
+	lengthHeader := []byte{}
 
-	for total < len(data) {
+	lengthHeader = binary.BigEndian.AppendUint32(lengthHeader, uint32(size))
+
+	totalHeader := 0
+	for totalHeader < 4 {
+		n, err := conn.Write(lengthHeader[totalHeader:])
+		if err != nil {
+			return err
+		}
+		totalHeader += n
+	}
+
+	total := 0
+	for total < size {
 		n, err := conn.Write(data[total:])
 		if err != nil {
 			return err
@@ -74,23 +85,24 @@ func (cm *connectionManager) writeAll(conn net.Conn, data []byte) error {
 	return nil
 }
 
-func (cm *connectionManager) readAll(conn net.Conn, dst []byte) error {
+func (cm *connectionManager) readAll(conn net.Conn) ([]byte, error) {
 	encodedLength := [4]byte{}
 
 	_, err := io.ReadFull(conn, encodedLength[:])
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	payloadLength := binary.BigEndian.Uint32(encodedLength[:])
 	if payloadLength > uint32(cm.maxBytes) {
-		return errors.New("payload too large")
+		return nil, errors.New("payload too large")
 	}
 
-	_, err = io.ReadFull(conn, dst[:payloadLength])
+	var b []byte = make([]byte, payloadLength)
+	_, err = io.ReadFull(conn, b[:payloadLength])
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return b, nil
 }

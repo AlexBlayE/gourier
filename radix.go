@@ -4,7 +4,7 @@ type radixNode struct {
 	children map[byte]*radixNode
 
 	handlers     []HandleFunc
-	errorHandler HandleFunc // TODO:
+	errorHandler HandleFunc
 
 	depth uint
 }
@@ -23,7 +23,7 @@ func (r *radixNode) FindPath(b ...byte) *radixNode {
 
 		child, ok := node.children[elem]
 		if !ok {
-			return nil
+			return &radixNode{nil, []HandleFunc{r.errorHandler}, nil, r.depth + 1} // If path dont'exist return errorHandler
 		}
 
 		node = child

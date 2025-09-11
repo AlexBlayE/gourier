@@ -13,3 +13,7 @@ func (rg *routerGroup) Group(header byte) *routerGroup {
 func (rg *routerGroup) Handler(header byte, handleFunc ...HandleFunc) {
 	rg.radixNode.children[header] = &radixNode{nil, handleFunc, nil, rg.radixNode.depth + 1}
 }
+
+func (rg *routerGroup) Error(errorHandler HandleFunc) {
+	rg.radixNode.errorHandler = errorHandler
+}

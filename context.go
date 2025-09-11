@@ -14,6 +14,8 @@ type Context struct {
 	depth   uint
 
 	abortFlag bool
+
+	store map[string]any
 }
 
 func (c *Context) Abort(errorResponse []byte) {
@@ -52,4 +54,17 @@ func (c *Context) GetConn() net.Conn {
 
 func (c *Context) GetPayload() []byte {
 	return c.payload[c.depth:]
+}
+
+func (c *Context) Get(key string) any {
+	elem, ok := c.store[key]
+	if !ok {
+		return nil
+	}
+
+	return elem
+}
+
+func (c *Context) Set(key string, val any) {
+	c.store[key] = val
 }
