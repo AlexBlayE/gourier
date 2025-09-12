@@ -3,14 +3,13 @@ package gourier
 import (
 	"crypto/tls"
 	"net"
-	"os"
-	"sync"
 )
 
+// TODO: buscar utilitat e implementar interface que tingui Group, Error y Handle
+
 type Server struct {
-	connManager *connectionManager
-	logger      *logger
-	radixRouter *radixNode
+	connManager *connectionManager // TODO: que el connection manager sigui una interface que tingui la funció ManageConn
+	radixRouter *radixNode         // TODO: que sigui una interface que tingui la funció FindPath
 }
 
 func New() *Server {
@@ -18,7 +17,6 @@ func New() *Server {
 
 	return &Server{
 		connManager: newConnectionManager(60, 1024, 50, radix),
-		logger:      &logger{nil, os.Stdout, sync.Mutex{}, "Info"},
 		radixRouter: radix,
 	}
 }

@@ -7,7 +7,7 @@ import (
 
 type HandleFunc func(ctx *Context)
 
-type Context struct {
+type Context struct { // TODO: fer que una interface abstraigui les seves funcions
 	conn net.Conn
 
 	payload []byte

@@ -2,7 +2,7 @@ package gourier
 
 import "errors"
 
-type handlerRunner struct {
+type handlerRunner struct { // TODO: utilitzar interface que implementi RunHandler
 	ctx *Context
 }
 
