@@ -30,7 +30,7 @@ func (s *Server) Run(port string) error {
 	}
 
 	for {
-		conn, err := l.Accept()
+		conn, err := l.Accept() // TODO: ara mateix accepta totes les conexions aunque despues en ManageConn les bloqueji
 		if err != nil {
 			continue
 		}
@@ -70,7 +70,7 @@ func (s *Server) Group(header byte) *routerGroup {
 }
 
 func (s *Server) SetOptions() error {
-	// TODO: opcions del connManager com MaxGoroutines, MaxBytes etc
+	// TODO: opcio ns del connManager com MaxGoroutines, MaxBytes etc
 	return nil
 }
 
