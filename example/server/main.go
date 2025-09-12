@@ -46,6 +46,7 @@ func main() {
 	p.Error(func(ctx *gourier.Context) {
 		fmt.Println("Error version")
 		// ctx.Send([]byte("VERSION_ERROR"))
+		ctx.Abort([]byte{1, 2, 3}, 255)
 	})
 
 	g := p.Group(byte(TEST))

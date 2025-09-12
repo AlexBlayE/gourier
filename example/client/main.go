@@ -43,7 +43,7 @@ func main() {
 
 	go upHandlers(p)
 
-	payload := []byte{byte(VERSION)}
+	payload := []byte{byte(255)}
 	err := p.Send("127.0.0.1:3000", payload)
 
 	if err != nil {

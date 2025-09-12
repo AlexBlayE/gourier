@@ -18,8 +18,8 @@ type Context struct { // TODO: fer que una interface abstraigui les seves funcio
 	store map[string]any
 }
 
-func (c *Context) Abort(errorResponse []byte) {
-	c.Send(errorResponse)
+func (c *Context) Abort(errorPayload []byte, headers ...byte) {
+	c.Send(errorPayload, headers...)
 	c.abortFlag = true
 }
 
