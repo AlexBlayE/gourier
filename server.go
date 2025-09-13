@@ -5,13 +5,10 @@ import (
 	"net"
 )
 
-// TODO: buscar utilitat e implementar interface que tingui Group, Error y Handle
-// **(crear un routergroup dins de server per que ja directament utilitzi les funcions pero de group directes)
-
 type Server struct {
-	connManager *connectionManager // TODO: que el connection manager sigui una interface que tingui la funció ManageConn
-	radixRouter *radixNode         // TODO: que sigui una interface que tingui la funció FindPath (nose si pot ser perque utilitzo el s.radixRouter.depth directament)
-	*routerGroup
+	connManager  *connectionManager // TODO: que el connection manager sigui una interface que tingui la funció ManageConn
+	radixRouter  *radixNode         // TODO: que sigui una interface que tingui la funció FindPath (nose si pot ser perque utilitzo el s.radixRouter.depth directament)
+	*routerGroup                    // TODO: cambiar per interfaz
 }
 
 func New() *Server {
