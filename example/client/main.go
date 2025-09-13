@@ -43,7 +43,7 @@ func main() {
 
 	go upHandlers(p)
 
-	payload := []byte{byte(255)}
+	payload := []byte{byte(VERSION)}
 	err := p.Send("127.0.0.1:3000", payload)
 
 	if err != nil {
@@ -67,8 +67,8 @@ func upHandlers(p *gourier.Server) {
 		data := domain.SerializeTestS1(ts1)
 
 		fmt.Println("Send data S1 -> ", ts1, "\n", data)
-		err := ctx.Send(data, byte(S1))
-		// err := ctx.Send(data, byte(TEST), byte(S1))
+		fmt.Println("------")
+		err := ctx.Send(data, byte(TEST), byte(S1))
 		if err != nil {
 			fmt.Println("Error S1")
 			return

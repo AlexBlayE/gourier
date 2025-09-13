@@ -6,10 +6,12 @@ import (
 )
 
 // TODO: buscar utilitat e implementar interface que tingui Group, Error y Handle
+// **(crear un routergroup dins de server per que ja directament utilitzi les funcions pero de group directes)
 
 type Server struct {
 	connManager *connectionManager // TODO: que el connection manager sigui una interface que tingui la funció ManageConn
-	radixRouter *radixNode         // TODO: que sigui una interface que tingui la funció FindPath
+	radixRouter *radixNode         // TODO: que sigui una interface que tingui la funció FindPath (nose si pot ser perque utilitzo el s.radixRouter.depth directament)
+	*routerGroup
 }
 
 func New() *Server {
@@ -18,6 +20,7 @@ func New() *Server {
 	return &Server{
 		connManager: newConnectionManager(60, 1024, 50, radix),
 		radixRouter: radix,
+		routerGroup: &routerGroup{radix},
 	}
 }
 
@@ -53,20 +56,6 @@ func (s *Server) RunTLS(port string, tlsConfig *tls.Config) error {
 	}
 }
 
-func (s *Server) Handler(header byte, handleFunc ...HandleFunc) {
-	s.radixRouter.children[header] = &radixNode{nil, handleFunc, nil, 1}
-}
-
-func (s *Server) Error(errorHandler HandleFunc) {
-	s.radixRouter.errorHandler = errorHandler
-}
-
-func (s *Server) Group(header byte) *routerGroup {
-	newChildNode := &radixNode{make(map[byte]*radixNode), nil, nil, 1}
-	s.radixRouter.children[header] = newChildNode
-	return &routerGroup{newChildNode}
-}
-
 func (s *Server) SetOptions() error {
 	// TODO: opcio ns del connManager com MaxGoroutines, MaxBytes etc
 	return nil
@@ -78,7 +67,7 @@ func (s *Server) Send(ip string, payload []byte) error {
 		return err
 	}
 
-	err = s.connManager.writeAll(conn, payload)
+	err = s.connManager.WriteAll(conn, payload)
 	if err != nil {
 		return err
 	}
@@ -94,7 +83,7 @@ func (s *Server) SendTLS(ip string, payload []byte, config *tls.Config) error {
 		return err
 	}
 
-	err = s.connManager.writeAll(conn, payload)
+	err = s.connManager.WriteAll(conn, payload)
 	if err != nil {
 		return err
 	}

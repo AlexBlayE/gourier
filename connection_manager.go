@@ -38,7 +38,7 @@ func (cm *connectionManager) ManageConn(conn net.Conn) {
 		for {
 			conn.SetDeadline(time.Now().Add(time.Second * time.Duration(cm.deadlineTime)))
 
-			b, err := cm.readAll(conn)
+			b, err := cm.ReadAll(conn)
 			if err != nil {
 				return
 			}
@@ -58,7 +58,7 @@ func (cm *connectionManager) ManageConn(conn net.Conn) {
 	}()
 }
 
-func (cm *connectionManager) writeAll(conn net.Conn, data []byte) error {
+func (cm *connectionManager) WriteAll(conn net.Conn, data []byte) error {
 	size := len(data)
 	lengthHeader := []byte{}
 
@@ -85,7 +85,7 @@ func (cm *connectionManager) writeAll(conn net.Conn, data []byte) error {
 	return nil
 }
 
-func (cm *connectionManager) readAll(conn net.Conn) ([]byte, error) {
+func (cm *connectionManager) ReadAll(conn net.Conn) ([]byte, error) {
 	encodedLength := [4]byte{}
 
 	_, err := io.ReadFull(conn, encodedLength[:])
