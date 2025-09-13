@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
-	"gourier"
-	"gourier/example/server/controllers"
-	"gourier/example/server/middlewares"
+
+	"github.com/AlexBlayE/gourier"
+	"github.com/AlexBlayE/gourier/example/server/controllers"
+	"github.com/AlexBlayE/gourier/example/server/middlewares"
 )
 
 type ProtocolCommands byte

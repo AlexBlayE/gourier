@@ -2,8 +2,9 @@ package middlewares
 
 import (
 	"fmt"
-	"gourier"
-	"gourier/example/server/domain"
+
+	"github.com/AlexBlayE/gourier"
+	"github.com/AlexBlayE/gourier/example/server/domain"
 )
 
 func DeserializeTestS2Middleware(ctx *gourier.Context) {

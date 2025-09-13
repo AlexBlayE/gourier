@@ -2,8 +2,9 @@ package main
 
 import (
 	"fmt"
-	"gourier"
-	"gourier/example/client/domain"
+
+	"github.com/AlexBlayE/gourier"
+	"github.com/AlexBlayE/gourier/example/client/domain"
 )
 
 type ProtocolCommands byte

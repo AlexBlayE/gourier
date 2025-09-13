@@ -2,8 +2,9 @@ package controllers
 
 import (
 	"fmt"
-	"gourier"
-	"gourier/example/server/domain"
+
+	"github.com/AlexBlayE/gourier"
+	"github.com/AlexBlayE/gourier/example/server/domain"
 )
 
 func TestS2Controller(ctx *gourier.Context) {
