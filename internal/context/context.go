@@ -1,26 +1,32 @@
-package gourier
+package context
 
 import (
 	"encoding/binary"
 	"net"
 )
 
-type HandleFunc func(ctx *Context)
+type Context struct {
+	Conn net.Conn
 
-type Context struct { // TODO: fer que una interface abstraigui les seves funcions
-	conn net.Conn
+	Payload []byte
+	Depth   uint
 
-	payload []byte
-	depth   uint
+	AbortFlag bool
 
-	abortFlag bool
+	Store map[string]any
+}
 
-	store map[string]any
+func (c *Context) SetAbortFlag(b bool) {
+	c.AbortFlag = b
+}
+
+func (c *Context) GetAbortFlag() bool {
+	return c.AbortFlag
 }
 
 func (c *Context) Abort(errorPayload []byte, headers ...byte) {
 	c.Send(errorPayload, headers...)
-	c.abortFlag = true
+	c.AbortFlag = true
 }
 
 func (c *Context) Send(payload []byte, headers ...byte) error {
@@ -38,7 +44,7 @@ func (c *Context) Send(payload []byte, headers ...byte) error {
 
 	total := 0
 	for total < len(toSend) {
-		n, err := c.conn.Write(toSend[total:])
+		n, err := c.Conn.Write(toSend[total:])
 		if err != nil {
 			return err
 		}
@@ -49,15 +55,15 @@ func (c *Context) Send(payload []byte, headers ...byte) error {
 }
 
 func (c *Context) GetConn() net.Conn {
-	return c.conn
+	return c.Conn
 }
 
 func (c *Context) GetPayload() []byte {
-	return c.payload[c.depth:]
+	return c.Payload[c.Depth:]
 }
 
 func (c *Context) Get(key string) any {
-	elem, ok := c.store[key]
+	elem, ok := c.Store[key]
 	if !ok {
 		return nil
 	}
@@ -66,5 +72,5 @@ func (c *Context) Get(key string) any {
 }
 
 func (c *Context) Set(key string, val any) {
-	c.store[key] = val
+	c.Store[key] = val
 }

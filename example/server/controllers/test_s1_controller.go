@@ -7,7 +7,7 @@ import (
 	"github.com/AlexBlayE/gourier/example/server/domain"
 )
 
-func TestS1Controller(ctx *gourier.Context) {
+func TestS1Controller(ctx gourier.Context) {
 	elem := ctx.Get("tests1")
 	t1 := elem.(domain.TestS1)
 

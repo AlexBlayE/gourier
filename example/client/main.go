@@ -5,6 +5,9 @@ import (
 
 	"github.com/AlexBlayE/gourier"
 	"github.com/AlexBlayE/gourier/example/client/domain"
+	connectionmanager "github.com/AlexBlayE/gourier/internal/connection_manager"
+	"github.com/AlexBlayE/gourier/internal/group"
+	pathfinder "github.com/AlexBlayE/gourier/internal/path_finder"
 )
 
 type ProtocolCommands byte
@@ -37,8 +40,15 @@ const (
 func main() {
 	var ch chan struct{}
 
-	p := gourier.New()
-	p.Error(func(ctx *gourier.Context) {
+	radix := &pathfinder.RadixNode{make(map[byte]gourier.PathFinder), nil, nil, 0}
+
+	p := gourier.New(
+		connectionmanager.NewConnectionManager(30, 1024, radix),
+		&group.RouterGroup{radix},
+		make(chan struct{}, 100),
+	)
+
+	p.Error(func(ctx gourier.Context) {
 		fmt.Println("eeeee")
 	})
 
@@ -59,7 +69,7 @@ func main() {
 }
 
 func upHandlers(p *gourier.Server) {
-	p.Handler(byte(V1), func(ctx *gourier.Context) {
+	p.Handler(byte(V1), func(ctx gourier.Context) {
 		ts1 := domain.TestS1{
 			Id:      [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
 			Emmiter: [16]byte{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
@@ -76,7 +86,7 @@ func upHandlers(p *gourier.Server) {
 		}
 	})
 
-	p.Handler(byte(V2), func(ctx *gourier.Context) {
+	p.Handler(byte(V2), func(ctx gourier.Context) {
 		ts1 := domain.TestS1{
 			Id:      [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
 			Emmiter: [16]byte{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
@@ -98,7 +108,7 @@ func upHandlers(p *gourier.Server) {
 
 	})
 
-	p.Error(func(ctx *gourier.Context) {
+	p.Error(func(ctx gourier.Context) {
 		fmt.Println(ctx.GetPayload())
 		// ctx.Send([]byte("BYE_BYE"))
 	})
