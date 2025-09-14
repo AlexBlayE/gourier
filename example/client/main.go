@@ -6,8 +6,8 @@ import (
 	"github.com/AlexBlayE/gourier"
 	"github.com/AlexBlayE/gourier/example/client/domain"
 	connectionmanager "github.com/AlexBlayE/gourier/internal/connection_manager"
-	"github.com/AlexBlayE/gourier/internal/group"
 	pathfinder "github.com/AlexBlayE/gourier/internal/path_finder"
+	group "github.com/AlexBlayE/gourier/internal/router_group"
 )
 
 type ProtocolCommands byte
