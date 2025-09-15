@@ -15,7 +15,6 @@ func (rg *RouterGroup) Group(header byte) gourier.RouteGroup {
 	return &RouterGroup{newChildNode}
 }
 
-// TODO: fer que es tingui que injectar el contructor de pathfinder
 func (rg *RouterGroup) Handler(header byte, handleFunc ...gourier.HandleFunc) {
 	node := &pathfinder.RadixNode{nil, handleFunc, nil, rg.PathFinder.GetDepth() + 1}
 	rg.PathFinder.SetChild(header, node)
