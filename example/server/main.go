@@ -6,9 +6,12 @@ import (
 	"github.com/AlexBlayE/gourier"
 	"github.com/AlexBlayE/gourier/example/server/controllers"
 	"github.com/AlexBlayE/gourier/example/server/middlewares"
+	connectionmanager "github.com/AlexBlayE/gourier/internal/connection_manager"
+	pathfinder "github.com/AlexBlayE/gourier/internal/path_finder"
+	group "github.com/AlexBlayE/gourier/internal/router_group"
 )
 
-type ProtocolCommands byte
+type ProtocolCommands = byte
 
 const (
 	_ ProtocolCommands = iota
@@ -17,7 +20,7 @@ const (
 	TEST
 )
 
-type Versions byte
+type Versions = byte
 
 const (
 	_ Versions = iota + 10
@@ -26,7 +29,7 @@ const (
 	V2
 )
 
-type TestSubcommands byte
+type TestSubcommands = byte
 
 const (
 	_ TestSubcommands = iota + 100
@@ -36,32 +39,37 @@ const (
 )
 
 func main() {
-	p := gourier.New()
-	// p.SetOptions()
+	radix := &pathfinder.RadixNode{make(map[byte]gourier.PathFinder), nil, nil, 0}
 
-	p.Handler(byte(VERSION), func(ctx *gourier.Context) {
+	p := gourier.New(
+		connectionmanager.NewConnectionManager(30, 1024, radix),
+		&group.RouterGroup{radix},
+		make(chan struct{}, 100),
+	)
+
+	p.Handler(VERSION, func(ctx gourier.Context) {
 		fmt.Println("Response version")
 		ctx.Send(nil, byte(V1))
 	})
 
-	p.Error(func(ctx *gourier.Context) {
+	p.Error(func(ctx gourier.Context) {
 		fmt.Println("Error version")
 	})
 
-	g := p.Group(byte(TEST))
+	g := p.Group(TEST)
 	g.Handler(
-		byte(S1),
+		S1,
 		middlewares.DeserializeTestS1Middleware,
 		controllers.TestS1Controller,
 	)
 
 	g.Handler(
-		byte(S2),
+		S2,
 		middlewares.DeserializeTestS2Middleware,
 		controllers.TestS2Controller,
 	)
 
-	g.Error(func(ctx *gourier.Context) {
+	g.Error(func(ctx gourier.Context) {
 		fmt.Println("Command error")
 	})
 

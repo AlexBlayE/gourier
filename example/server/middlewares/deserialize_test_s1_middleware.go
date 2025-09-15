@@ -7,7 +7,7 @@ import (
 	"github.com/AlexBlayE/gourier/example/server/domain"
 )
 
-func DeserializeTestS1Middleware(ctx *gourier.Context) {
+func DeserializeTestS1Middleware(ctx gourier.Context) {
 	payload := ctx.GetPayload()
 
 	t1, err := domain.DeserializeTestS1(payload)
