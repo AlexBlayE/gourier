@@ -46,7 +46,6 @@ func (cm *ConnectionManager) ManageConn(conn net.Conn) {
 			return
 		}
 
-		// TODO: fer que s'injecti un context creator
 		hr := &handlerrunner.HandlerRunner{&context.Context{conn, b, rn.GetDepth(), false, make(map[string]any)}}
 
 		err = hr.RunHandlers(rn.GetHandlers()...)
