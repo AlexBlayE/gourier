@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"net"
+	"sync"
 	"time"
 
 	"github.com/AlexBlayE/gourier"
@@ -18,6 +19,8 @@ type ConnectionManager struct {
 	maxBytes uint
 
 	pathFinder gourier.PathFinder
+
+	sPool *sync.Pool
 }
 
 func NewConnectionManager(
@@ -29,6 +32,11 @@ func NewConnectionManager(
 		deadlineTime: deadlineTime,
 		maxBytes:     maxReadBytes,
 		pathFinder:   pathFinder,
+		sPool: &sync.Pool{
+			New: func() any {
+				return &context.Context{}
+			},
+		},
 	}
 }
 
@@ -46,9 +54,17 @@ func (cm *ConnectionManager) ManageConn(conn net.Conn) {
 			return
 		}
 
-		hr := &handlerrunner.HandlerRunner{&context.Context{conn, b, rn.GetDepth(), false, make(map[string]any)}}
+		ctx := cm.sPool.Get().(*context.Context)
+		ctx.Conn = conn
+		ctx.Payload = b
+		ctx.Depth = rn.GetDepth()
+		ctx.AbortFlag = false
+		ctx.Store = make(map[string]any)
+
+		hr := &handlerrunner.HandlerRunner{Ctx: ctx}
 
 		err = hr.RunHandlers(rn.GetHandlers()...)
+		cm.sPool.Put(ctx)
 		if err != nil {
 			return
 		}
